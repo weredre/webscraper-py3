@@ -1,4 +1,5 @@
 import requests
+import json
 from bs4 import BeautifulSoup
 
 form = "Form W-2"
@@ -17,10 +18,8 @@ for table_element in soup.select(".picklist-dataTable tr:has(td)"):  # <-- chang
     form_title = table_element.find("td", class_="MiddleCellSpacer")
     form_year = table_element.find("td", class_="EndCellSpacer")
     if form_number.text.strip() == form:
-        print(form_number.text.strip())
-        print(form_title.text.strip())
-        print(form_year.text.strip())
-        print()
+        data_form_number = form_number.text.strip()
+        data_form_title = form_title.text.strip()
     if int(form_year.text.strip()) > max_year:
         max_year = int(form_year.text.strip())
     if int(form_year.text.strip()) < min_year or min_year == 0:
@@ -29,3 +28,13 @@ for table_element in soup.select(".picklist-dataTable tr:has(td)"):  # <-- chang
 
 print(max_year)
 print(min_year)
+
+data = {'tax_form': []}
+data['tax_form'].append({
+    'Form_Number': data_form_number,
+    'Form_Title': data_form_title,
+    'Min_Year': min_year,
+    'Max_Year': max_year
+})
+with open('data.json', 'w') as outfile:
+    json.dump(data, outfile)
