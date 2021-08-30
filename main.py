@@ -1,8 +1,12 @@
 import requests
+import os
 import json
 from bs4 import BeautifulSoup
 
 form = "Form W-2"
+first_year = 2012
+last_year = 2021
+years_to_download = range(first_year, last_year+1, 1)
 URL = (
     "https://apps.irs.gov/app/picklist/list/priorFormPublication."
     "html?resultsPerPage=200&sortColumn=sortOrder&indexOfFirstRow=0&criteria=formNumber&value="
@@ -13,6 +17,7 @@ page = requests.get(URL)
 soup = BeautifulSoup(page.content, "html.parser")
 min_year = 0
 max_year = 0
+i = 0
 for table_element in soup.select(".picklist-dataTable tr:has(td)"):  # <-- change the selector here
     form_number = table_element.find("td", class_="LeftCellSpacer")
     form_title = table_element.find("td", class_="MiddleCellSpacer")
@@ -24,10 +29,20 @@ for table_element in soup.select(".picklist-dataTable tr:has(td)"):  # <-- chang
         max_year = int(form_year.text.strip())
     if int(form_year.text.strip()) < min_year or min_year == 0:
         min_year = int(form_year.text.strip())
+    if form_number.text.strip() == form and int(form_year.text.strip()) in years_to_download:
+        u = form_number.a["href"]
+        p = "{}-{}.pdf".format(
+            form_number.get_text(strip=True), form_year.get_text(strip=True)
+        )
 
+        path = os.path.join(form, p)
 
-print(max_year)
-print(min_year)
+        if not os.path.exists(form):
+            os.makedirs(form)
+
+        print(f"Saving {u=} to {path=}")
+        with open(path, "wb") as f_out:
+            f_out.write(requests.get(u).content)
 
 data = {'tax_form': []}
 data['tax_form'].append({
